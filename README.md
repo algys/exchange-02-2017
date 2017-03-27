@@ -1,5 +1,6 @@
 # exchange-02-2017
 [![Build Status](https://travis-ci.org/algys/exchange-02-2017.svg?branch=master)](https://travis-ci.org/algys/exchange-02-2017)
+
 #Описание Игры
 Суть игры построить наиболее многочисленную популяцию.
 У игрока изначально есть одна башня с населением в 100 солдат.
