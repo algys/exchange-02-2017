@@ -1,5 +1,6 @@
 package com.cyclic.models;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 
@@ -8,16 +9,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 
 
-@SuppressWarnings("DefaultFileTemplate")
+@SuppressWarnings({"DefaultFileTemplate", "unused"})
 public class Status {
+
+    @JsonProperty
     private final String status;
 
-    public Status(String status){
+    @JsonCreator
+    public Status(@JsonProperty("status") String status){
         this.status = status;
     }
 
-    @SuppressWarnings("unused")
-    @JsonProperty("status")
     public String getStatus() {
         return status;
     }

@@ -2,7 +2,6 @@ package com.cyclic.models;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -21,7 +20,7 @@ public class User {
     private String firstName;
     @JsonProperty
     private String lastName;
-    @JsonIgnore
+    @JsonProperty
     private String password;
     @JsonProperty
     private String email;
@@ -38,6 +37,13 @@ public class User {
         this.login = login;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.password  = password;
+        this.email = email;
+    }
+
+
+    public User(String email, String login, String password){
+        this.login = login;
         this.password  = password;
         this.email = email;
     }
