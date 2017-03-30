@@ -4,6 +4,8 @@ import com.cyclic.models.Status;
 import com.cyclic.models.User;
 import com.cyclic.models.UserView;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,15 +31,18 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @RunWith(SpringRunner.class)
 @AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
 @Transactional
-public class RestApiTest {
+public class RestApiTestUnit {
     @Autowired
     private TestRestTemplate restTemplate;
+    private final Random rand = new Random();
 
-    static final private String chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    static private final Random rand = new Random();
+    private String email;
+    private String login;
+    private String password;
 
     @NotNull
     private String getRandomString(int len ){
+        String chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         StringBuilder sb = new StringBuilder( len );
         for( int i = 0; i < len; i++ )
             sb.append( chars.charAt( rand.nextInt(chars.length()) ) );
@@ -52,6 +57,13 @@ public class RestApiTest {
                 .append(getRandomString(3))
                 .append(".com")
                 .toString();
+    }
+
+    @Before
+    public  void setFields(){
+        email = getRandomEmail();
+        login = getRandomString(8);
+        password = getRandomString(8);
     }
 
     private ResponseEntity<Status> login(User user, HttpStatus expectedHttpStatus) {
@@ -96,9 +108,6 @@ public class RestApiTest {
 
     @Test
     public void authTest(){
-        String email = getRandomEmail();
-        String login = getRandomString(8);
-        String password = getRandomString(8);
         User user = new User(email, login, password);
 
         //without registration
@@ -113,9 +122,6 @@ public class RestApiTest {
 
     @Test
     public void registrationTest(){
-        String email = getRandomEmail();
-        String login = getRandomString(8);
-        String password = getRandomString(8);
         User user;
 
         //incorrect fields
@@ -137,9 +143,6 @@ public class RestApiTest {
 
     @Test
     public void getCurrentUserTest(){
-        String email = getRandomEmail();
-        String login = getRandomString(8);
-        String password = getRandomString(8);
         User user = new User(email, login, password);
 
         registration(user, HttpStatus.OK);
@@ -179,9 +182,6 @@ public class RestApiTest {
 
     @Test
     public void changeUserTest(){
-        String email = getRandomEmail();
-        String login = getRandomString(8);
-        String password = getRandomString(8);
         User user = new User(email, login, password);
         registration(user, HttpStatus.OK);
         String cookie = login(user, HttpStatus.OK).getHeaders().get(HttpHeaders.SET_COOKIE).get(0);
