@@ -15,7 +15,6 @@ public class RoomConfig {
     private Integer bonusMinValue;
     private Integer bonusMaxValue;
     private Integer fieldWidth;
-
     private Integer fieldHeight;
 
     public Integer getPlayersCount() {
