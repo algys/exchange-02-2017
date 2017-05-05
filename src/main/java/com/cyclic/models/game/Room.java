@@ -173,7 +173,7 @@ public class Room {
 
     public void acceptMove(Player player, Move move) {
         if (status == Constants.STATUS_PLAYING && field != null && pid.equals(player.getId())) {
-            if (!field.acceptMove(player, move)) {
+            if (!field.acceptMove(move)) {
                 player.disconnectBadApi("Your are moving like an asshole");
                 return;
             }

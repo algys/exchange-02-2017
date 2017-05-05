@@ -1,8 +1,10 @@
 package com.cyclic.models.game;
 
 import com.cyclic.models.game.net.NewBonusBroadcast;
+import com.cyclic.models.game.utils.AcceptMoveResult;
 
 import java.awt.*;
+import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -35,23 +37,11 @@ public class GameField {
         return world[y][x];
     }
 
-//    public Node addNewTower(Node src, Node dst) {
-//        if (src.getType() != Node.NODE_TOWER || dst.getType() != Node.NODE_TOWER) {
-//            return null;
-//        }
-//        int newX = dst.getX();
-//        int newY = dst.getY();
-//
-//        if(src.getX() == newX && src.getY() == newY)
-//            return null;
-//
-//        if(getByPosition(newX, newY) == null) {
-//            src.addChild(dst);
-//            world[newX][newY] = dst;
-//            return dst;
-//        }
-//        return null;
-//    }
+    public void setNodeToPosition(int beginX, int beginY, Node node) {
+        if (beginX < 0 || beginX >= width || beginY < 0 || beginY >= height)
+            return;
+        world[beginY][beginX] = node;
+    }
 
     public void addAndBroadcastRandomBonuses(int count) {
         Vector<Bonus> bonuses = new Vector<>();
@@ -102,36 +92,93 @@ public class GameField {
         room = null;
     }
 
-    public boolean acceptMove(Player player, Move move) {
-        Node n1 = getByPosition(move.getXfrom(), move.getYfrom());
-        Node n2 = getByPosition(move.getXto(), move.getYto());
-        if (n1 != null && n1.getPlayerID() == room.getPid()) {
-            if (n2 != null && n2.getType() == NODE_TOWER)
-                return false;
-            int newUnits = n1.getValue();
-            if (n2 != null && n2.getType() == NODE_BONUS) {
-                newUnits = n2.getValue();
-            } else {
-                newUnits /= 2;
-                n1.setValue(n1.getValue() - newUnits);
-            }
-            move.setParentUnitsCount(n1.getValue());
-            setNodeToPosition(move.getXto(), move.getYto(), new Node(
-                    n1,
-                    room.getPid(),
-                    newUnits,
-                    NODE_TOWER,
-                    move.getXto(),
-                    move.getYto()));
-
-            return true;
-        }
-        return false;
+    private boolean checkPlayerTurn(Node player) {
+        return player.getPlayerID() == room.getPid();
     }
 
-    public void setNodeToPosition(int beginX, int beginY, Node node) {
-        if (beginX < 0 || beginX >= width || beginY < 0 || beginY >= height)
-            return;
-        world[beginY][beginX] = node;
+    private boolean checkPassUnits(Node node, int passUnits) {
+        return passUnits >= 1 && node.getValue() < passUnits;
+    }
+
+    private void addNewTower(Node parentNode, Long pid, int countNodes, int x, int y) {
+        setNodeToPosition(x, y, new Node(
+                parentNode,
+                pid,
+                countNodes,
+                NODE_TOWER,
+                x, y));
+    }
+
+    private void addNewTower(Node parentNode, Long pid, int countNodes, Move move) {
+        addNewTower(parentNode, pid, countNodes, move.getXto(), move.getXto());
+    }
+
+    private AcceptMoveResult playerMoveFree(Node fromNode, Move move) {
+        int newUnits = move.getUnitsCount();
+        fromNode.addToValue(-newUnits);
+        addNewTower(fromNode, fromNode.getPlayerID(), newUnits, move);
+        return AcceptMoveResult.ACCEPT_OK;
+    }
+
+    private AcceptMoveResult playerMoveBonus(Node currentPlayer, Node bonus, int passUnits) {
+        int newUnits = passUnits;
+        currentPlayer.setValue(currentPlayer.getValue() - newUnits);
+
+        newUnits += bonus.getValue();
+
+        /* rewrite bonus */
+        addNewTower(currentPlayer, currentPlayer.getPlayerID(),
+                newUnits, bonus.getX(), bonus.getY());
+
+        return AcceptMoveResult.ACCEPT_OK;
+    }
+
+    private final static Random randomDelta = new Random(); // TODO check
+    private AcceptMoveResult playerMoveEnemy(Node currentPlayer, Node enemy, int passUnits) {
+        int delta = enemy.getValue() - passUnits;
+        /**
+         *  delta < 0 ~ current Player win
+         *  delta = 0 ~ Random
+         *  delta > 0 ~ enemy win
+         */
+
+        if(delta == 0)
+            delta = (randomDelta.nextInt(1)) == 0 ? 1 : -1;
+
+        if(delta > 0) {
+            currentPlayer.addToValue(-passUnits);
+            enemy.addToValue(passUnits);
+        } else {
+            
+        }
+    }
+
+    public AcceptMoveResult acceptMove(Move move) {
+        Node my = getByPosition(move.getXfrom(), move.getYfrom());
+        Node target = getByPosition(move.getXto(), move.getYto());
+
+        AcceptMoveResult result = AcceptMoveResult.ACCEPT_FAIL;
+
+        if (my != null && checkPlayerTurn(my)) {
+            if(checkPassUnits(my, move.getUnitsCount()))
+                return AcceptMoveResult.ACCEPT_FAIL;
+
+            if(target == null)
+                result = playerMoveFree(my, move);
+            else {
+                switch (target.getType()) {
+                    case NODE_TOWER:
+                        result = playerMoveEnemy(my, target, move.getUnitsCount());
+                        break;
+                    case NODE_BONUS:
+                        result = playerMoveBonus(my, target, move.getUnitsCount());
+                        break;
+                }
+            }
+
+            move.setParentUnitsCount(my.getValue());
+        }
+
+        return result;
     }
 }
